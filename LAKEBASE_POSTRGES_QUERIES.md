@@ -132,6 +132,17 @@ AND project_id = 'stackql'
 AND branch_id = 'production';
 ```
 
+
+./stackql exec \
+  -o text \
+  --hideheaders \
+  -f billable_usage.csv \
+  "SELECT contents 
+  FROM databricks_account.billing.billable_usage 
+  WHERE start_month = '2025-12' 
+  AND end_month = '2026-01' 
+  AND account_id = 'ebfcc5a9-9d49-4c93-b651-b3ee6cf1c9ce'"
+
 ```sql
 /* vw_endpoints */
 SELECT token FROM databricks_workspace.postgres.credentials WHERE deployment_name = 'dbc-74aa95f7-8c7e' 
