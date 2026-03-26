@@ -4,7 +4,6 @@ anthropic>=0.40.0
 pystackql>=3.7.0
 sqlalchemy>=2.0.0
 psycopg2-binary>=2.9.9
-databricks-sdk>=0.36.0
 croniter>=2.0.0
 python-dotenv>=1.0.0
 pandas>=2.0.0

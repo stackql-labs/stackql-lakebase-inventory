@@ -12,8 +12,6 @@ from src.db.service import DatabaseService
 
 logger = logging.getLogger(__name__)
 
-_LOCAL_DEV = os.environ.get("STACKQL_LOCAL_DEV", "").lower() == "true"
-
 KNOWN_PROVIDERS = ["aws", "azure", "google", "databricks", "github", "cloudflare", "okta"]
 
 # ---------------------------------------------------------------------------
@@ -45,21 +43,6 @@ if st.button("Add Mapping", type="primary"):
             if not all([provider, env_var_name, secret_scope, secret_key]):
                 st.error("All fields are required.")
                 return
-
-            # Validate secret exists (skip in local dev)
-            if not _LOCAL_DEV:
-                try:
-                    from databricks.sdk import WorkspaceClient
-                    ws = WorkspaceClient()
-                    ws.secrets.get_secret(scope=secret_scope, key=secret_key)
-                except Exception as exc:
-                    if "NotFound" in type(exc).__name__ or "not found" in str(exc).lower():
-                        st.error(
-                            f"Secret not found: scope=`{secret_scope}`, key=`{secret_key}`. "
-                            "Create the secret in Databricks first."
-                        )
-                        return
-                    st.warning(f"Could not validate secret (proceeding): {exc}")
 
             config = ProviderConfig(
                 provider=provider,
@@ -106,31 +89,17 @@ else:
         with cols[1]:
             if st.button("Test", key=f"test_prov_{c.id}"):
                 with st.spinner("Testing connection..."):
-                    injected = False
                     try:
-                        # Resolve and inject
-                        if _LOCAL_DEV:
-                            value = os.environ.get(c.env_var_name)
-                            if not value:
-                                st.warning(f"`{c.env_var_name}` not set in environment.")
-                                continue
+                        value = os.environ.get(c.env_var_name)
+                        if not value:
+                            st.warning(f"`{c.env_var_name}` not set in environment.")
                         else:
-                            from databricks.sdk import WorkspaceClient
-                            ws = WorkspaceClient()
-                            secret = ws.secrets.get_secret(scope=c.secret_scope, key=c.secret_key)
-                            os.environ[c.env_var_name] = secret.value
-                            injected = True
-
-                        # Test StackQL
-                        from pystackql import StackQL
-                        stackql = StackQL(download_dir="/tmp/stackql")
-                        result = stackql.execute("SHOW PROVIDERS")
-                        st.success(f"Connection test passed for `{c.env_var_name}`")
+                            from pystackql import StackQL
+                            stackql = StackQL(download_dir="/tmp/stackql")
+                            result = stackql.execute("SHOW PROVIDERS")
+                            st.success(f"Connection test passed for `{c.env_var_name}`")
                     except Exception as exc:
                         st.error(f"Test failed: {exc}")
-                    finally:
-                        if injected:
-                            os.environ.pop(c.env_var_name, None)
         with cols[2]:
             with st.popover(":material/delete:"):
                 st.caption(f"Delete `{c.env_var_name}`?")

@@ -67,16 +67,19 @@ class TestQueryService:
         assert "TEST_KEY_1" not in os.environ
         assert "TEST_KEY_2" not in os.environ
 
-    @patch.dict(os.environ, {"STACKQL_LOCAL_DEV": "true"})
-    def test_inject_credentials_local_dev(self, mock_db_service):
-        """In local dev, credentials are read from env, not Databricks Secrets."""
-        os.environ["AWS_ACCESS_KEY_ID"] = "local-key"
+    @patch.dict(os.environ, {"AWS_ACCESS_KEY_ID": "local-key"})
+    def test_inject_credentials_verifies_env(self, mock_db_service):
+        """Credentials are verified from env vars."""
         svc = QueryService(mock_db_service)
-        injected = svc._inject_credentials("aws")
+        verified = svc._inject_credentials("aws")
+        assert "AWS_ACCESS_KEY_ID" in verified
 
-        # In local dev, no keys are injected (they're already in env)
-        assert injected == []
+    def test_inject_credentials_missing_env(self, mock_db_service):
+        """Missing env var returns empty list but does not error."""
         os.environ.pop("AWS_ACCESS_KEY_ID", None)
+        svc = QueryService(mock_db_service)
+        verified = svc._inject_credentials("aws")
+        assert verified == []
 
     def test_extract_empty_provider_config(self):
         """No error when provider has no config entries."""
