@@ -1,0 +1,46 @@
+/*+ exists */
+SELECT
+count(*) as count
+FROM databricks_workspace.postgres.roles
+WHERE project_id = '{{ project_id }}'
+AND branch_id = '{{ branch_id }}'
+AND deployment_name = '{{ deployment_name }}'
+AND SPLIT_PART(name, '/', -1) = '{{ role_id }}'
+;
+
+/*+ create */
+INSERT INTO databricks_workspace.postgres.roles (
+  project_id,
+  branch_id,
+  role_id,
+  data__role__spec__postgres_role,
+  data__role__spec__identity_type,
+  deployment_name
+)
+SELECT
+  '{{ project_id }}',
+  '{{ branch_id }}',
+  '{{ role_id }}',
+  '{{ postgres_role }}',
+  '{{ identity_type }}',
+  '{{ deployment_name }}'
+;
+
+/*+ exports */
+SELECT
+SPLIT_PART(name, '/', -1) as role_name,
+JSON_EXTRACT(status, '$.postgres_role') as postgres_role
+FROM databricks_workspace.postgres.roles
+WHERE project_id = '{{ project_id }}'
+AND branch_id = '{{ branch_id }}'
+AND deployment_name = '{{ deployment_name }}'
+AND SPLIT_PART(name, '/', -1) = '{{ role_id }}'
+;
+
+/*+ delete */
+DELETE FROM databricks_workspace.postgres.roles
+WHERE project_id = '{{ project_id }}'
+AND branch_id = '{{ branch_id }}'
+AND deployment_name = '{{ deployment_name }}'
+AND role_id = '{{ role_id }}'
+;

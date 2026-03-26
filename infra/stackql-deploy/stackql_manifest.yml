@@ -1,0 +1,130 @@
+# stackql-deploy manifest for StackQL Cloud Inventory infrastructure
+# Provisions the Lakebase instance, workspace resources, and federation
+
+version: 2
+name: stackql-cloud-inventory
+description: >
+  Long-lived infrastructure for StackQL Cloud Inventory.
+  Creates the Lakebase (Postgres) instance, schemas, roles, endpoints,
+  and Unity Catalog federation resources.
+
+providers:
+  - databricks_workspace
+  - databricks_account
+
+globals:
+  - name: deployment_name
+    description: "Databricks workspace deployment name (e.g., dbc-74aa95f7-8c7e)"
+  - name: project_id
+    description: "Lakebase project ID"
+    default: "stackql"
+  - name: branch_id
+    description: "Lakebase branch ID"
+    default: "production"
+  - name: pg_version
+    description: "Postgres version for Lakebase"
+    default: "16"
+  - name: secret_scope
+    description: "Databricks secret scope name"
+    default: "stackql-inventory"
+
+resources:
+  # 1. Lakebase project (managed Postgres instance)
+  - name: lakebase_project
+    description: "Lakebase Postgres project"
+    props:
+      - name: deployment_name
+        value: "{{ deployment_name }}"
+      - name: project_id
+        value: "{{ project_id }}"
+      - name: display_name
+        value: "StackQL Cloud Inventory"
+      - name: pg_version
+        value: "{{ pg_version }}"
+      - name: min_cu
+        value: "0.5"
+      - name: max_cu
+        value: "2"
+    exports:
+      - project_name
+
+  # 2. Lakebase branch (production)
+  - name: lakebase_branch
+    description: "Lakebase production branch"
+    props:
+      - name: deployment_name
+        value: "{{ deployment_name }}"
+      - name: project_id
+        value: "{{ project_id }}"
+      - name: branch_id
+        value: "{{ branch_id }}"
+    exports:
+      - branch_name
+
+  # 3. Lakebase database (stackql)
+  - name: lakebase_database
+    description: "Lakebase database for inventory data"
+    props:
+      - name: deployment_name
+        value: "{{ deployment_name }}"
+      - name: project_id
+        value: "{{ project_id }}"
+      - name: branch_id
+        value: "{{ branch_id }}"
+      - name: database_id
+        value: "stackql-db"
+      - name: postgres_database
+        value: "stackql"
+    exports:
+      - database_name
+
+  # 4. Lakebase endpoint (primary read-write)
+  - name: lakebase_endpoint
+    description: "Lakebase primary compute endpoint"
+    props:
+      - name: deployment_name
+        value: "{{ deployment_name }}"
+      - name: project_id
+        value: "{{ project_id }}"
+      - name: branch_id
+        value: "{{ branch_id }}"
+      - name: endpoint_id
+        value: "primary"
+      - name: endpoint_type
+        value: "ENDPOINT_TYPE_READ_WRITE"
+      - name: min_cu
+        value: "0.5"
+      - name: max_cu
+        value: "2"
+    exports:
+      - endpoint_host
+
+  # 5. Lakebase role (app service role)
+  - name: lakebase_app_role
+    description: "Lakebase role for the Streamlit app"
+    props:
+      - name: deployment_name
+        value: "{{ deployment_name }}"
+      - name: project_id
+        value: "{{ project_id }}"
+      - name: branch_id
+        value: "{{ branch_id }}"
+      - name: role_id
+        value: "app-svc"
+      - name: postgres_role
+        value: "app_service"
+      - name: identity_type
+        value: "SERVICE_PRINCIPAL"
+    exports:
+      - role_name
+
+  # 6. Secret scope for credentials
+  - name: secret_scope
+    description: "Databricks secret scope for StackQL inventory credentials"
+    props:
+      - name: deployment_name
+        value: "{{ deployment_name }}"
+      - name: scope_name
+        value: "{{ secret_scope }}"
+    exports:
+      - scope_name

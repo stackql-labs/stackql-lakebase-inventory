@@ -1,0 +1,46 @@
+/*+ exists */
+SELECT
+count(*) as count
+FROM databricks_workspace.postgres.databases
+WHERE project_id = '{{ project_id }}'
+AND branch_id = '{{ branch_id }}'
+AND deployment_name = '{{ deployment_name }}'
+AND SPLIT_PART(name, '/', -1) = '{{ database_id }}'
+;
+
+/*+ create */
+INSERT INTO databricks_workspace.postgres.databases (
+  project_id,
+  branch_id,
+  database_id,
+  data__database__spec__postgres_database,
+  data__database__spec__role,
+  deployment_name
+)
+SELECT
+  '{{ project_id }}',
+  '{{ branch_id }}',
+  '{{ database_id }}',
+  '{{ postgres_database }}',
+  'projects/{{ project_id }}/branches/{{ branch_id }}/roles/{{ role_id }}',
+  '{{ deployment_name }}'
+;
+
+/*+ exports */
+SELECT
+SPLIT_PART(name, '/', -1) as database_name,
+JSON_EXTRACT(status, '$.postgres_database') as postgres_database
+FROM databricks_workspace.postgres.databases
+WHERE project_id = '{{ project_id }}'
+AND branch_id = '{{ branch_id }}'
+AND deployment_name = '{{ deployment_name }}'
+AND SPLIT_PART(name, '/', -1) = '{{ database_id }}'
+;
+
+/*+ delete */
+DELETE FROM databricks_workspace.postgres.databases
+WHERE project_id = '{{ project_id }}'
+AND branch_id = '{{ branch_id }}'
+AND deployment_name = '{{ deployment_name }}'
+AND database_id = '{{ database_id }}'
+;
