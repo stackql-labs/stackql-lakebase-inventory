@@ -1,0 +1,73 @@
+# Databricks Asset Bundles configuration for StackQL Cloud Inventory
+bundle:
+  name: stackql-cloud-inventory
+
+variables:
+  lakebase_project_name:
+    description: "Lakebase project name"
+    default: "stackql"
+  lakebase_branch_name:
+    description: "Lakebase branch name"
+    default: "production"
+  catalog_name:
+    description: "Unity Catalog foreign catalog name"
+    default: "stackql_inventory_catalog"
+  secret_scope:
+    description: "Databricks secret scope for credentials"
+    default: "stackql-inventory"
+
+targets:
+  dev:
+    mode: development
+    default: true
+    variables:
+      lakebase_project_name: "stackql-dev"
+      catalog_name: "stackql_inventory_catalog_dev"
+
+  prod:
+    mode: production
+    variables:
+      lakebase_project_name: "stackql"
+      catalog_name: "stackql_inventory_catalog"
+
+resources:
+  # Databricks App
+  apps:
+    stackql-inventory-app:
+      name: "stackql-inventory"
+      description: "StackQL Cloud Inventory – Streamlit App"
+      source_code_path: ../../app
+
+  # Template Job – cloned per-schedule by job_service.py
+  jobs:
+    stackql-inventory-template:
+      name: "stackql-inventory-template"
+      description: "Template job for scheduled StackQL inventory queries"
+      tasks:
+        - task_key: "run_query"
+          python_wheel_task:
+            package_name: "stackql_inventory"
+            entry_point: "run_query"
+            parameters:
+              - "--query-id"
+              - "0"
+              - "--target-schema"
+              - "stackql_inventory"
+              - "--target-table"
+              - "template"
+      schedule:
+        quartz_cron_expression: "0 0 0 1 1 ? 2099"
+        timezone_id: "UTC"
+        pause_status: "PAUSED"
+
+  # Schemas for Unity Catalog
+  schemas:
+    stackql-app-schema:
+      catalog_name: ${var.catalog_name}
+      name: "stackql_app"
+      comment: "StackQL Cloud Inventory – application metadata"
+
+    stackql-inventory-schema:
+      catalog_name: ${var.catalog_name}
+      name: "stackql_inventory"
+      comment: "StackQL Cloud Inventory – cloud inventory results"

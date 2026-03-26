@@ -1,0 +1,59 @@
+/*+ exists */
+SELECT
+count(*) as count
+FROM databricks_workspace.postgres.endpoints
+WHERE project_id = '{{ project_id }}'
+AND branch_id = '{{ branch_id }}'
+AND deployment_name = '{{ deployment_name }}'
+AND SPLIT_PART(name, '/', -1) = '{{ endpoint_id }}'
+;
+
+/*+ create */
+INSERT INTO databricks_workspace.postgres.endpoints (
+  project_id,
+  branch_id,
+  endpoint_id,
+  data__endpoint__spec__endpoint_type,
+  data__endpoint__spec__autoscaling_limit_min_cu,
+  data__endpoint__spec__autoscaling_limit_max_cu,
+  deployment_name
+)
+SELECT
+  '{{ project_id }}',
+  '{{ branch_id }}',
+  '{{ endpoint_id }}',
+  '{{ endpoint_type }}',
+  {{ min_cu }},
+  {{ max_cu }},
+  '{{ deployment_name }}'
+;
+
+/*+ statecheck, retries=10, retry_delay=15 */
+SELECT
+JSON_EXTRACT(status, '$.current_state') as current_state
+FROM databricks_workspace.postgres.endpoints
+WHERE project_id = '{{ project_id }}'
+AND branch_id = '{{ branch_id }}'
+AND deployment_name = '{{ deployment_name }}'
+AND SPLIT_PART(name, '/', -1) = '{{ endpoint_id }}'
+AND JSON_EXTRACT(status, '$.current_state') = 'ACTIVE'
+;
+
+/*+ exports */
+SELECT
+SPLIT_PART(name, '/', -1) as endpoint_name,
+JSON_EXTRACT(status, '$.hosts.host') as endpoint_host
+FROM databricks_workspace.postgres.endpoints
+WHERE project_id = '{{ project_id }}'
+AND branch_id = '{{ branch_id }}'
+AND deployment_name = '{{ deployment_name }}'
+AND SPLIT_PART(name, '/', -1) = '{{ endpoint_id }}'
+;
+
+/*+ delete */
+DELETE FROM databricks_workspace.postgres.endpoints
+WHERE project_id = '{{ project_id }}'
+AND branch_id = '{{ branch_id }}'
+AND deployment_name = '{{ deployment_name }}'
+AND endpoint_id = '{{ endpoint_id }}'
+;

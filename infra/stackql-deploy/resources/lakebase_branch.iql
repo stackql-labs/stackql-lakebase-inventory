@@ -1,0 +1,46 @@
+/*+ exists */
+SELECT
+count(*) as count
+FROM databricks_workspace.postgres.branches
+WHERE project_id = '{{ project_id }}'
+AND branch_id = '{{ branch_id }}'
+AND deployment_name = '{{ deployment_name }}'
+;
+
+/*+ create */
+INSERT INTO databricks_workspace.postgres.branches (
+  project_id,
+  branch_id,
+  deployment_name
+)
+SELECT
+  '{{ project_id }}',
+  '{{ branch_id }}',
+  '{{ deployment_name }}'
+;
+
+/*+ statecheck, retries=10, retry_delay=15 */
+SELECT
+JSON_EXTRACT(status, '$.current_state') as current_state
+FROM databricks_workspace.postgres.branches
+WHERE project_id = '{{ project_id }}'
+AND branch_id = '{{ branch_id }}'
+AND deployment_name = '{{ deployment_name }}'
+AND JSON_EXTRACT(status, '$.current_state') = 'READY'
+;
+
+/*+ exports */
+SELECT
+SPLIT_PART(name, '/', -1) as branch_name
+FROM databricks_workspace.postgres.branches
+WHERE project_id = '{{ project_id }}'
+AND branch_id = '{{ branch_id }}'
+AND deployment_name = '{{ deployment_name }}'
+;
+
+/*+ delete */
+DELETE FROM databricks_workspace.postgres.branches
+WHERE project_id = '{{ project_id }}'
+AND branch_id = '{{ branch_id }}'
+AND deployment_name = '{{ deployment_name }}'
+;

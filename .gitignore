@@ -1,3 +1,33 @@
+# Environment
 .env
+app/.env
+
+# StackQL binary (not infra or deploy dirs)
 .stackql/
-stackql*
+/stackql
+/tmp/stackql/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+*.egg
+
+# IDE
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Pytest
+.pytest_cache/
+htmlcov/
+.coverage

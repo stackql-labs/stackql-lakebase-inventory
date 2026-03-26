@@ -1,0 +1,48 @@
+/*+ exists */
+SELECT
+count(*) as count
+FROM databricks_workspace.postgres.projects
+WHERE project_id = '{{ project_id }}'
+AND deployment_name = '{{ deployment_name }}'
+;
+
+/*+ create */
+INSERT INTO databricks_workspace.postgres.projects (
+  project_id,
+  data__project__spec__display_name,
+  data__project__spec__pg_version,
+  data__project__spec__initial_endpoint_spec__autoscaling_limit_min_cu,
+  data__project__spec__initial_endpoint_spec__autoscaling_limit_max_cu,
+  deployment_name
+)
+SELECT
+  '{{ project_id }}',
+  '{{ display_name }}',
+  '{{ pg_version }}',
+  {{ min_cu }},
+  {{ max_cu }},
+  '{{ deployment_name }}'
+;
+
+/*+ statecheck, retries=10, retry_delay=30 */
+SELECT
+JSON_EXTRACT(status, '$.current_state') as current_state
+FROM databricks_workspace.postgres.projects
+WHERE project_id = '{{ project_id }}'
+AND deployment_name = '{{ deployment_name }}'
+AND JSON_EXTRACT(status, '$.current_state') = 'READY'
+;
+
+/*+ exports */
+SELECT
+SPLIT_PART(name, '/', -1) as project_name
+FROM databricks_workspace.postgres.projects
+WHERE project_id = '{{ project_id }}'
+AND deployment_name = '{{ deployment_name }}'
+;
+
+/*+ delete */
+DELETE FROM databricks_workspace.postgres.projects
+WHERE project_id = '{{ project_id }}'
+AND deployment_name = '{{ deployment_name }}'
+;

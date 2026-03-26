@@ -1,0 +1,31 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Streamlit: run app",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "streamlit",
+      "args": ["run", "src/main.py"],
+      "cwd": "${workspaceFolder}/app",
+      "envFile": "${workspaceFolder}/app/.env",
+      "justMyCode": true
+    },
+    {
+      "name": "Databricks: run-local (attach)",
+      "type": "debugpy",
+      "request": "attach",
+      "connect": {
+        "host": "localhost",
+        "port": 5678
+      },
+      "justMyCode": true,
+      "pathMappings": [
+        {
+          "localRoot": "${workspaceFolder}/app",
+          "remoteRoot": "."
+        }
+      ]
+    }
+  ]
+}
