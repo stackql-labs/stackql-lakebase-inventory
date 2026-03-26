@@ -1,0 +1,26 @@
+/*+ exists */
+SELECT id AS databricks_group_id
+FROM databricks_account.iam.account_groups
+WHERE account_id = '{{ databricks_account_id }}'
+AND filter = 'displayName Eq "{{ display_name }}"';
+
+/*+ create */
+INSERT INTO databricks_account.iam.account_groups (
+displayName,
+account_id
+)
+SELECT 
+'{{ display_name }}',
+'{{ databricks_account_id }}'
+RETURNING
+id
+;
+
+/*+ exports */
+SELECT '{{ this.databricks_group_id }}' as databricks_group_id,
+'{{ display_name }}' as display_name;
+
+/*+ delete */
+DELETE FROM databricks_account.iam.account_groups
+WHERE account_id = '{{ databricks_account_id }}'
+AND id = '{{ databricks_group_id }}';
