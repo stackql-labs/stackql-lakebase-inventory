@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import {
-  AppBar, Box, Drawer, IconButton, List, ListItemButton, ListItemIcon,
+  AppBar, Box, Divider, Drawer, IconButton, List, ListItemButton, ListItemIcon,
   ListItemText, Toolbar, Typography, useTheme,
 } from '@mui/material';
 import {
@@ -14,8 +14,9 @@ import {
 } from '@mui/icons-material';
 import logo from '../assets/logo.png';
 import logoWhite from '../assets/logo-white.png';
+import ResourceBrowser from './ResourceBrowser';
 
-const DRAWER_WIDTH = 220;
+const DRAWER_WIDTH = 260;
 
 const NAV_ITEMS = [
   { label: 'Query Editor', path: '/', icon: <CodeIcon /> },
@@ -34,21 +35,32 @@ export default function Layout({ onToggleTheme }: LayoutProps) {
   const isDark = theme.palette.mode === 'dark';
   const [mobileOpen, setMobileOpen] = useState(false);
 
+  const handleInsertResource = (fqn: string) => {
+    // Dispatch a custom event that IdePage's SqlEditor listens to
+    window.dispatchEvent(new CustomEvent('stackql:insert-resource', { detail: fqn }));
+  };
+
   const drawer = (
-    <Box sx={{ mt: 1 }}>
-      <List>
-        {NAV_ITEMS.map((item) => (
-          <ListItemButton
-            key={item.path}
-            selected={location.pathname === item.path}
-            onClick={() => { navigate(item.path); setMobileOpen(false); }}
-            sx={{ borderRadius: 1, mx: 1, mb: 0.5 }}
-          >
-            <ListItemIcon sx={{ minWidth: 36 }}>{item.icon}</ListItemIcon>
-            <ListItemText primary={item.label} />
-          </ListItemButton>
-        ))}
-      </List>
+    <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+      <Box sx={{ mt: 1 }}>
+        <List>
+          {NAV_ITEMS.map((item) => (
+            <ListItemButton
+              key={item.path}
+              selected={location.pathname === item.path}
+              onClick={() => { navigate(item.path); setMobileOpen(false); }}
+              sx={{ borderRadius: 1, mx: 1, mb: 0.5 }}
+            >
+              <ListItemIcon sx={{ minWidth: 36 }}>{item.icon}</ListItemIcon>
+              <ListItemText primary={item.label} />
+            </ListItemButton>
+          ))}
+        </List>
+      </Box>
+      <Divider sx={{ mx: 1, my: 1 }} />
+      <Box sx={{ flexGrow: 1, overflow: 'auto', px: 1 }}>
+        <ResourceBrowser onInsertResource={handleInsertResource} />
+      </Box>
     </Box>
   );
 
