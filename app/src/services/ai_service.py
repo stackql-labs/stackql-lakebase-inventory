@@ -13,8 +13,6 @@ from collections.abc import Generator
 
 logger = logging.getLogger(__name__)
 
-_LOCAL_DEV = os.environ.get("STACKQL_LOCAL_DEV", "").lower() == "true"
-
 QUERY_SYSTEM_PROMPT = """You are a StackQL expert assistant. StackQL lets users query cloud provider APIs using SQL syntax.
 
 Key rules:
@@ -45,37 +43,19 @@ class AIService:
     """Provides AI chat capabilities via the Anthropic API."""
 
     def _get_api_key(self) -> str:
-        """Resolve the Anthropic API key."""
-        if _LOCAL_DEV:
-            key = os.environ.get("ANTHROPIC_API_KEY")
-            if not key:
-                raise RuntimeError(
-                    "ANTHROPIC_API_KEY not set. Required for AI features in local dev mode."
-                )
-            return key
+        """Resolve the Anthropic API key.
 
-        try:
-            from databricks.sdk import WorkspaceClient
-            ws = WorkspaceClient()
-            secret = ws.secrets.get_secret(scope="stackql-inventory", key="anthropic-api-key")
-            if secret.value is None:
-                raise RuntimeError(
-                    "Anthropic API key secret is empty. "
-                    "Scope=stackql-inventory, key=anthropic-api-key."
-                )
-            return secret.value
-        except ImportError:
+        In local dev: reads ANTHROPIC_API_KEY from env.
+        In production: the Databricks App runtime injects secrets as env vars
+        via app.yml, so we read from env in both cases.
+        """
+        key = os.environ.get("ANTHROPIC_API_KEY")
+        if not key:
             raise RuntimeError(
-                "databricks-sdk is required for secrets resolution. "
-                "Set STACKQL_LOCAL_DEV=true for local development."
+                "ANTHROPIC_API_KEY not set. "
+                "Set it in .env for local dev, or configure it in app.yml for production."
             )
-        except Exception as exc:
-            if "NotFound" in type(exc).__name__ or "not found" in str(exc).lower():
-                raise RuntimeError(
-                    "Anthropic API key not found in Databricks Secrets. "
-                    "Scope=stackql-inventory, key=anthropic-api-key."
-                ) from exc
-            raise
+        return key
 
     def stream_chat(
         self, messages: list[dict[str, str]], mode: str

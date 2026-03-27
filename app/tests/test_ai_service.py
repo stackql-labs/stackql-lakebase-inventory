@@ -42,22 +42,21 @@ class TestAIService:
         sql = AIService.extract_sql_from_response(response)
         assert sql == "SELECT 1"
 
-    @patch.dict(os.environ, {"STACKQL_LOCAL_DEV": "true", "ANTHROPIC_API_KEY": "test-key"})
-    def test_get_api_key_local_dev(self):
-        """In local dev, API key is read from environment."""
+    @patch.dict(os.environ, {"ANTHROPIC_API_KEY": "test-key"})
+    def test_get_api_key_from_env(self):
+        """API key is read from environment."""
         svc = AIService()
         key = svc._get_api_key()
         assert key == "test-key"
 
-    @patch.dict(os.environ, {"STACKQL_LOCAL_DEV": "true"}, clear=False)
     def test_get_api_key_missing_raises(self):
-        """Missing ANTHROPIC_API_KEY in local dev raises RuntimeError."""
+        """Missing ANTHROPIC_API_KEY raises RuntimeError."""
         os.environ.pop("ANTHROPIC_API_KEY", None)
         svc = AIService()
         with pytest.raises(RuntimeError, match="ANTHROPIC_API_KEY not set"):
             svc._get_api_key()
 
-    @patch.dict(os.environ, {"STACKQL_LOCAL_DEV": "true", "ANTHROPIC_API_KEY": "test-key"})
+    @patch.dict(os.environ, {"ANTHROPIC_API_KEY": "test-key"})
     def test_stream_chat_yields_strings(self):
         """stream_chat yields string chunks."""
         mock_stream = MagicMock()
