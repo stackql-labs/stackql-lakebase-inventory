@@ -101,18 +101,24 @@ export async function startServer(): Promise<void> {
 
     serverProcess = proc;
 
-    // Give the process a moment to fail or start, then resolve
-    setTimeout(resolve, 500);
+    // Give the process time to initialize before probing
+    setTimeout(resolve, 2000);
   });
 
   // Wait for the server to be ready (retry connection)
-  const maxRetries = 30;
+  // Suppress console.error during probes — pgwire-lite logs ECONNREFUSED via winston
+  const origStderrWrite = process.stderr.write.bind(process.stderr);
+  process.stderr.write = (() => true) as typeof process.stderr.write;
+
+  const maxRetries = 20;
   for (let i = 0; i < maxRetries; i++) {
     if (!serverProcess) {
+      process.stderr.write = origStderrWrite;
       throw new Error('StackQL server process exited during startup.');
     }
     try {
       await runQuery(pgwireOptions, 'SELECT 1');
+      process.stderr.write = origStderrWrite;
       isReady = true;
       console.log('StackQL server is ready.');
       return;
@@ -120,7 +126,8 @@ export async function startServer(): Promise<void> {
       await new Promise((r) => setTimeout(r, 1000));
     }
   }
-  throw new Error('StackQL server failed to start within 30 seconds');
+  process.stderr.write = origStderrWrite;
+  throw new Error('StackQL server failed to start within 20 seconds');
 }
 
 /** Stop the StackQL server. */
