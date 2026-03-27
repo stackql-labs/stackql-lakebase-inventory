@@ -23,27 +23,52 @@ export async function startServer(): Promise<void> {
 
   console.log(`Starting StackQL server on port ${STACKQL_PORT}...`);
 
-  serverProcess = spawn('stackql', ['srv', `--pgsrv.port=${STACKQL_PORT}`], {
-    stdio: ['ignore', 'pipe', 'pipe'],
-  });
+  // Wrap spawn in a promise so we can catch ENOENT (binary not found)
+  await new Promise<void>((resolve, reject) => {
+    const proc = spawn('stackql', ['srv', `--pgsrv.port=${STACKQL_PORT}`], {
+      stdio: ['ignore', 'pipe', 'pipe'],
+    });
 
-  serverProcess.stdout?.on('data', (data: Buffer) => {
-    console.log(`[stackql] ${data.toString().trim()}`);
-  });
+    // Handle spawn errors (e.g. binary not found)
+    proc.on('error', (err: NodeJS.ErrnoException) => {
+      serverProcess = null;
+      if (err.code === 'ENOENT') {
+        reject(new Error(
+          'stackql binary not found in PATH. Install it or set STACKQL_PORT to point to an existing server.'
+        ));
+      } else {
+        reject(err);
+      }
+    });
 
-  serverProcess.stderr?.on('data', (data: Buffer) => {
-    console.error(`[stackql] ${data.toString().trim()}`);
-  });
+    proc.stdout?.on('data', (data: Buffer) => {
+      console.log(`[stackql] ${data.toString().trim()}`);
+    });
 
-  serverProcess.on('exit', (code) => {
-    console.log(`StackQL server exited with code ${code}`);
-    serverProcess = null;
-    isReady = false;
+    proc.stderr?.on('data', (data: Buffer) => {
+      console.error(`[stackql] ${data.toString().trim()}`);
+    });
+
+    proc.on('exit', (code) => {
+      console.log(`StackQL server exited with code ${code}`);
+      serverProcess = null;
+      isReady = false;
+    });
+
+    serverProcess = proc;
+
+    // Give the process a moment to fail or start, then resolve
+    // so we can proceed to the readiness check loop
+    setTimeout(resolve, 500);
   });
 
   // Wait for the server to be ready (retry connection)
   const maxRetries = 30;
   for (let i = 0; i < maxRetries; i++) {
+    // If process died during startup, bail out
+    if (!serverProcess) {
+      throw new Error('StackQL server process exited during startup.');
+    }
     try {
       await runQuery(pgwireOptions, 'SELECT 1');
       isReady = true;
@@ -68,7 +93,7 @@ export function stopServer(): void {
 /** Execute a StackQL query and return structured results. */
 export async function executeQuery(sql: string): Promise<QueryResult> {
   if (!isReady) {
-    throw new Error('StackQL server is not running. Call startServer() first.');
+    throw new Error('StackQL server is not running. Install the stackql binary or start it manually.');
   }
 
   const start = performance.now();
