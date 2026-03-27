@@ -2,12 +2,12 @@
 .env
 app/.env
 
-# StackQL binary (not infra or deploy dirs)
+# StackQL binary and runtime artifacts
 .stackql/
-/stackql
-/tmp/stackql/
+stackql
+stackql.zip
 stackql-*-shell.sh
-stackql-zip
+/tmp/stackql/
 
 # Python
 __pycache__/

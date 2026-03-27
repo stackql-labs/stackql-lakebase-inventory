@@ -76,7 +76,7 @@ export async function startServer(): Promise<void> {
 
   // Wrap spawn in a promise so we can catch ENOENT
   await new Promise<void>((resolve, reject) => {
-    const proc = spawn(binaryPath, ['srv', `--pgsrv.port=${STACKQL_PORT}`], {
+    const proc = spawn(binaryPath, ['srv', '--pgsrv.address=0.0.0.0', `--pgsrv.port=${STACKQL_PORT}`], {
       stdio: ['ignore', 'pipe', 'pipe'],
     });
 
