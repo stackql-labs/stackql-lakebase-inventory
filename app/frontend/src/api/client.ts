@@ -12,7 +12,6 @@ export interface SavedQuery {
   name: string;
   description?: string | null;
   query_text: string;
-  provider: string;
   created_by?: string | null;
   created_at?: string | null;
   updated_at?: string | null;
@@ -31,16 +30,6 @@ export interface Schedule {
   created_at?: string | null;
   updated_at?: string | null;
   query_name?: string;
-}
-
-export interface ProviderConfig {
-  id?: number;
-  provider: string;
-  env_var_name: string;
-  secret_scope: string;
-  secret_key: string;
-  created_by?: string | null;
-  created_at?: string | null;
 }
 
 export interface InventoryTable {
@@ -123,24 +112,6 @@ export async function resumeSchedule(id: number): Promise<void> {
 
 export async function deleteSchedule(id: number): Promise<void> {
   return jsonFetch(`/api/schedules/${id}`, { method: 'DELETE' });
-}
-
-// ── Provider Config CRUD ─────────────────────────────────────────────
-
-export async function getProviders(): Promise<ProviderConfig[]> {
-  return jsonFetch('/api/providers');
-}
-
-export async function saveProvider(c: Omit<ProviderConfig, 'id' | 'created_at'>): Promise<{ id: number }> {
-  return jsonFetch('/api/providers', { method: 'POST', body: JSON.stringify(c) });
-}
-
-export async function deleteProvider(id: number): Promise<void> {
-  return jsonFetch(`/api/providers/${id}`, { method: 'DELETE' });
-}
-
-export async function testProvider(id: number): Promise<{ success: boolean; message: string }> {
-  return jsonFetch(`/api/providers/${id}/test`, { method: 'POST' });
 }
 
 // ── Inventory ────────────────────────────────────────────────────────

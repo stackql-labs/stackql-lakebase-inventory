@@ -12,7 +12,6 @@ import { startServer as startStackQL, stopServer as stopStackQL } from './servic
 import queryRouter from './routes/query.js';
 import queriesRouter from './routes/queries.js';
 import schedulesRouter from './routes/schedules.js';
-import providersRouter from './routes/providers.js';
 import inventoryRouter from './routes/inventory.js';
 import chatRouter from './routes/chat.js';
 
@@ -30,7 +29,6 @@ app.use(express.json({ limit: '5mb' }));
 app.use('/api/query', queryRouter);
 app.use('/api/queries', queriesRouter);
 app.use('/api/schedules', schedulesRouter);
-app.use('/api/providers', providersRouter);
 app.use('/api/inventory', inventoryRouter);
 app.use('/api/chat', chatRouter);
 
