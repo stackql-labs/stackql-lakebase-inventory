@@ -1,0 +1,53 @@
+{
+  "version": "v1",
+  "host": "https://dbc-74aa95f7-8c7e.cloud.databricks.com",
+  "remote_path": "/Workspace/Users/javen@stackql.io/databricks_apps/hello-world_2026_03_27-03_58/nodejs-fastapi-hello-world-app",
+  "last_modified_times": {
+    "README": "2026-03-27T15:16:41.6116959+11:00",
+    "app.yaml": "2026-03-27T15:16:42.0845571+11:00",
+    "backend/__init__.py": "2026-03-27T15:16:42.6037829+11:00",
+    "backend/main.py": "2026-03-27T15:16:42.8697817+11:00",
+    "frontend/index.html": "2026-03-27T15:16:43.1479587+11:00",
+    "frontend/src/App.css": "2026-03-27T15:16:43.5130912+11:00",
+    "frontend/src/App.tsx": "2026-03-27T15:16:43.7828232+11:00",
+    "frontend/src/index.css": "2026-03-27T15:16:43.9829489+11:00",
+    "frontend/src/main.tsx": "2026-03-27T15:16:44.2326242+11:00",
+    "frontend/tsconfig.node.json": "2026-03-27T15:16:44.4668178+11:00",
+    "frontend/vite.config.ts": "2026-03-27T15:16:44.7793559+11:00",
+    "package.json": "2026-03-27T15:16:45.0040275+11:00",
+    "requirements.txt": "2026-03-27T15:16:45.2338589+11:00",
+    "tsconfig.json": "2026-03-27T15:16:45.4227484+11:00"
+  },
+  "local_to_remote_names": {
+    "README": "README",
+    "app.yaml": "app.yaml",
+    "backend/__init__.py": "backend/__init__.py",
+    "backend/main.py": "backend/main.py",
+    "frontend/index.html": "frontend/index.html",
+    "frontend/src/App.css": "frontend/src/App.css",
+    "frontend/src/App.tsx": "frontend/src/App.tsx",
+    "frontend/src/index.css": "frontend/src/index.css",
+    "frontend/src/main.tsx": "frontend/src/main.tsx",
+    "frontend/tsconfig.node.json": "frontend/tsconfig.node.json",
+    "frontend/vite.config.ts": "frontend/vite.config.ts",
+    "package.json": "package.json",
+    "requirements.txt": "requirements.txt",
+    "tsconfig.json": "tsconfig.json"
+  },
+  "remote_to_local_names": {
+    "README": "README",
+    "app.yaml": "app.yaml",
+    "backend/__init__.py": "backend/__init__.py",
+    "backend/main.py": "backend/main.py",
+    "frontend/index.html": "frontend/index.html",
+    "frontend/src/App.css": "frontend/src/App.css",
+    "frontend/src/App.tsx": "frontend/src/App.tsx",
+    "frontend/src/index.css": "frontend/src/index.css",
+    "frontend/src/main.tsx": "frontend/src/main.tsx",
+    "frontend/tsconfig.node.json": "frontend/tsconfig.node.json",
+    "frontend/vite.config.ts": "frontend/vite.config.ts",
+    "package.json": "package.json",
+    "requirements.txt": "requirements.txt",
+    "tsconfig.json": "tsconfig.json"
+  }
+}
