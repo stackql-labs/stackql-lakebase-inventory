@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useRef } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import {
   Box, Button,
   Dialog, DialogTitle, DialogContent, DialogActions, TextField,
@@ -14,7 +14,6 @@ import SqlEditor, { type SqlEditorHandle } from '../components/SqlEditor';
 import ResultsGrid from '../components/ResultsGrid';
 import ChatPanel from '../components/ChatPanel';
 import QueryLibrary from '../components/QueryLibrary';
-import ResourceBrowser from '../components/ResourceBrowser';
 import { executeQuery, saveQuery, type QueryResult, type SavedQuery } from '../api/client';
 
 export default function IdePage() {
@@ -32,6 +31,16 @@ export default function IdePage() {
 
   // Toast
   const [toast, setToast] = useState<{ message: string; severity: 'success' | 'error' } | null>(null);
+
+  // Listen for resource insertions from the sidebar ResourceBrowser
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const fqn = (e as CustomEvent<string>).detail;
+      editorRef.current?.insertAtCursor(fqn);
+    };
+    window.addEventListener('stackql:insert-resource', handler);
+    return () => window.removeEventListener('stackql:insert-resource', handler);
+  }, []);
 
   const handleExecute = useCallback(async () => {
     if (!sql.trim()) return;
@@ -87,22 +96,13 @@ export default function IdePage() {
     setSql(newSql);
   };
 
-  const handleInsertResource = (fqn: string) => {
-    editorRef.current?.insertAtCursor(fqn);
-  };
-
   return (
     <Box sx={{ display: 'flex', gap: 2, height: 'calc(100vh - 100px)' }}>
-      {/* Left: Resource Browser + Editor + Results */}
+      {/* Left: Editor + Results */}
       <Box sx={{ flex: '1 1 65%', display: 'flex', flexDirection: 'column', minWidth: 0 }}>
-        {/* Top row: Query Library + Resource Browser side by side */}
-        <Box sx={{ display: 'flex', gap: 1, mb: 1, minHeight: 0, maxHeight: '40%' }}>
-          <Box sx={{ flex: '1 1 50%', overflow: 'auto' }}>
-            <QueryLibrary onSelect={handleSelectQuery} />
-          </Box>
-          <Box sx={{ flex: '1 1 50%', overflow: 'auto' }}>
-            <ResourceBrowser onInsertResource={handleInsertResource} />
-          </Box>
+        {/* Query Library (collapsible) */}
+        <Box sx={{ mb: 1 }}>
+          <QueryLibrary onSelect={handleSelectQuery} />
         </Box>
 
         {/* Editor */}
