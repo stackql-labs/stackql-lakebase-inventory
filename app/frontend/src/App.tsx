@@ -6,7 +6,6 @@ import Layout from './components/Layout';
 import IdePage from './pages/IdePage';
 import SchedulesPage from './pages/SchedulesPage';
 import InventoryPage from './pages/InventoryPage';
-import ProvidersPage from './pages/ProvidersPage';
 
 export default function App() {
   const [mode, setMode] = useState<'light' | 'dark'>('dark');
@@ -23,7 +22,6 @@ export default function App() {
             <Route path="/" element={<IdePage />} />
             <Route path="/schedules" element={<SchedulesPage />} />
             <Route path="/inventory" element={<InventoryPage />} />
-            <Route path="/providers" element={<ProvidersPage />} />
           </Route>
         </Routes>
       </BrowserRouter>

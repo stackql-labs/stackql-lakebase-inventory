@@ -8,7 +8,6 @@ import {
   Code as CodeIcon,
   Schedule as ScheduleIcon,
   Inventory2 as InventoryIcon,
-  Cloud as CloudIcon,
   DarkMode as DarkModeIcon,
   LightMode as LightModeIcon,
   Menu as MenuIcon,
@@ -19,10 +18,9 @@ import logoWhite from '../assets/logo-white.png';
 const DRAWER_WIDTH = 220;
 
 const NAV_ITEMS = [
-  { label: 'SQL IDE', path: '/', icon: <CodeIcon /> },
+  { label: 'Query Editor', path: '/', icon: <CodeIcon /> },
   { label: 'Schedules', path: '/schedules', icon: <ScheduleIcon /> },
   { label: 'Inventory', path: '/inventory', icon: <InventoryIcon /> },
-  { label: 'Providers', path: '/providers', icon: <CloudIcon /> },
 ];
 
 interface LayoutProps {

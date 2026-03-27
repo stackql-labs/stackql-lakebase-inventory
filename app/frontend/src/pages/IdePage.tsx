@@ -1,6 +1,6 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import {
-  Box, Button, Select, MenuItem, FormControl, InputLabel,
+  Box, Button,
   Dialog, DialogTitle, DialogContent, DialogActions, TextField,
   CircularProgress, Snackbar, Alert,
 } from '@mui/material';
@@ -10,15 +10,16 @@ import {
   Psychology as ExplainIcon,
   Analytics as InterpretIcon,
 } from '@mui/icons-material';
-import SqlEditor from '../components/SqlEditor';
+import SqlEditor, { type SqlEditorHandle } from '../components/SqlEditor';
 import ResultsGrid from '../components/ResultsGrid';
 import ChatPanel from '../components/ChatPanel';
 import QueryLibrary from '../components/QueryLibrary';
+import ResourceBrowser from '../components/ResourceBrowser';
 import { executeQuery, saveQuery, type QueryResult, type SavedQuery } from '../api/client';
 
 export default function IdePage() {
+  const editorRef = useRef<SqlEditorHandle>(null);
   const [sql, setSql] = useState('');
-  const [provider, setProvider] = useState('aws');
   const [result, setResult] = useState<QueryResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -50,7 +51,7 @@ export default function IdePage() {
   const handleSave = async () => {
     if (!saveName.trim() || !sql.trim()) return;
     try {
-      await saveQuery({ name: saveName, description: saveDesc, query_text: sql, provider });
+      await saveQuery({ name: saveName, description: saveDesc, query_text: sql });
       setSaveOpen(false);
       setSaveName('');
       setSaveDesc('');
@@ -62,7 +63,6 @@ export default function IdePage() {
 
   const handleSelectQuery = (q: SavedQuery) => {
     setSql(q.query_text);
-    setProvider(q.provider);
   };
 
   const handleExplain = () => {
@@ -87,30 +87,31 @@ export default function IdePage() {
     setSql(newSql);
   };
 
+  const handleInsertResource = (fqn: string) => {
+    editorRef.current?.insertAtCursor(fqn);
+  };
+
   return (
     <Box sx={{ display: 'flex', gap: 2, height: 'calc(100vh - 100px)' }}>
-      {/* Left: Editor + Results */}
+      {/* Left: Resource Browser + Editor + Results */}
       <Box sx={{ flex: '1 1 65%', display: 'flex', flexDirection: 'column', minWidth: 0 }}>
-        {/* Query Library (collapsible) */}
-        <Box sx={{ mb: 1 }}>
-          <QueryLibrary onSelect={handleSelectQuery} />
+        {/* Top row: Query Library + Resource Browser side by side */}
+        <Box sx={{ display: 'flex', gap: 1, mb: 1, minHeight: 0, maxHeight: '40%' }}>
+          <Box sx={{ flex: '1 1 50%', overflow: 'auto' }}>
+            <QueryLibrary onSelect={handleSelectQuery} />
+          </Box>
+          <Box sx={{ flex: '1 1 50%', overflow: 'auto' }}>
+            <ResourceBrowser onInsertResource={handleInsertResource} />
+          </Box>
         </Box>
 
         {/* Editor */}
         <Box sx={{ border: 1, borderColor: 'divider', borderRadius: 1, overflow: 'hidden', mb: 1 }}>
-          <SqlEditor value={sql} onChange={setSql} onExecute={handleExecute} />
+          <SqlEditor ref={editorRef} value={sql} onChange={setSql} onExecute={handleExecute} />
         </Box>
 
         {/* Toolbar */}
         <Box sx={{ display: 'flex', gap: 1, mb: 1, alignItems: 'center', flexWrap: 'wrap' }}>
-          <FormControl size="small" sx={{ minWidth: 120 }}>
-            <InputLabel>Provider</InputLabel>
-            <Select value={provider} label="Provider" onChange={(e) => setProvider(e.target.value)}>
-              {['aws', 'azure', 'google', 'databricks', 'github', 'cloudflare', 'okta'].map((p) => (
-                <MenuItem key={p} value={p}>{p}</MenuItem>
-              ))}
-            </Select>
-          </FormControl>
           <Button
             variant="contained"
             startIcon={loading ? <CircularProgress size={16} color="inherit" /> : <RunIcon />}

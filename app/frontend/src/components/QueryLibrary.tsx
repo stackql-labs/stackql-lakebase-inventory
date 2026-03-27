@@ -49,7 +49,7 @@ export default function QueryLibrary({ onSelect }: QueryLibraryProps) {
           <ListItemButton key={q.id} onClick={() => onSelect(q)} sx={{ borderRadius: 1, mb: 0.5 }}>
             <ListItemText
               primary={q.name}
-              secondary={q.provider}
+              secondary={q.description}
               primaryTypographyProps={{ variant: 'body2', noWrap: true }}
               secondaryTypographyProps={{ variant: 'caption' }}
             />
