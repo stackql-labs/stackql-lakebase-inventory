@@ -29,18 +29,18 @@ logger = logging.getLogger(__name__)
 STATIC_DIR = Path(__file__).parent / "static"
 
 
-def _read_favicon_b64() -> str:
-    """Read the favicon.ico and return a base64-encoded data URI."""
-    favicon_path = STATIC_DIR / "favicon.ico"
-    if favicon_path.exists():
-        data = favicon_path.read_bytes()
-        return f"data:image/x-icon;base64,{base64.b64encode(data).decode()}"
+@st.cache_data
+def _read_static_b64(file_path: str, mime: str) -> str:
+    """Read a static file and return a base64-encoded data URI (cached)."""
+    p = Path(file_path)
+    if p.exists():
+        return f"data:{mime};base64,{base64.b64encode(p.read_bytes()).decode()}"
     return ""
 
 
 def _inject_custom_css() -> None:
     """Inject custom CSS for branding header and favicon spinner."""
-    favicon_uri = _read_favicon_b64()
+    favicon_uri = _read_static_b64(str(STATIC_DIR / "favicon.ico"), "image/x-icon")
 
     st.markdown(f"""
     <style>
@@ -92,13 +92,12 @@ def _inject_custom_css() -> None:
 
 def _render_header() -> None:
     """Render the top-of-page logo and title."""
-    logo_path = STATIC_DIR / "logo.png"
-    if logo_path.exists():
-        logo_data = base64.b64encode(logo_path.read_bytes()).decode()
+    logo_uri = _read_static_b64(str(STATIC_DIR / "logo.png"), "image/png")
+    if logo_uri:
         st.markdown(
             f"""
             <div class="top-header">
-                <img src="data:image/png;base64,{logo_data}" alt="StackQL Logo">
+                <img src="{logo_uri}" alt="StackQL Logo">
                 <span class="title">Cloud Inventory</span>
             </div>
             """,
@@ -117,14 +116,14 @@ def main() -> None:
     _inject_custom_css()
     _render_header()
 
-    # Verify Lakebase connectivity early
-    try:
-        from src.db.service import DatabaseService
-        db_svc = DatabaseService()
-        st.session_state["db_service"] = db_svc
-    except RuntimeError as exc:
-        st.error(f"**Lakebase Connection Error:** {exc}")
-        st.stop()
+    # Verify Lakebase connectivity early (reuse across reruns)
+    if "db_service" not in st.session_state:
+        try:
+            from src.db.service import DatabaseService
+            st.session_state["db_service"] = DatabaseService()
+        except RuntimeError as exc:
+            st.error(f"**Lakebase Connection Error:** {exc}")
+            st.stop()
 
     # Page navigation (paths relative to this script's directory)
     page = st.navigation([
