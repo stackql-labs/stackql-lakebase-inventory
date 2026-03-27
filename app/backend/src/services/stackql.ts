@@ -1,10 +1,8 @@
 /** StackQL service – manages server subprocess and query execution via pgwire-lite. */
 
 import { spawn, execSync, type ChildProcess } from 'child_process';
-import { existsSync, chmodSync, mkdirSync } from 'fs';
+import { existsSync, chmodSync, createWriteStream } from 'fs';
 import { pipeline } from 'stream/promises';
-import { createWriteStream } from 'fs';
-import { createGunzip } from 'zlib';
 import path from 'path';
 import { runQuery } from '@stackql/pgwire-lite';
 import type { QueryResult } from '../models/types.js';
@@ -13,8 +11,7 @@ let serverProcess: ChildProcess | null = null;
 let isReady = false;
 
 const STACKQL_PORT = parseInt(process.env.STACKQL_PORT ?? '5444', 10);
-const STACKQL_DIR = path.resolve(process.cwd(), '.stackql');
-const STACKQL_BIN = path.join(STACKQL_DIR, 'stackql');
+const STACKQL_BIN = path.resolve(process.cwd(), 'stackql');
 const DOWNLOAD_URL = 'https://releases.stackql.io/stackql/latest/stackql_linux_amd64.zip';
 
 const pgwireOptions = {
@@ -38,29 +35,28 @@ async function ensureBinary(): Promise<string> {
     // Not in PATH, continue to local check/download
   }
 
-  // Check local .stackql/ directory
+  // Check local binary next to .stackql/ dir
   if (existsSync(STACKQL_BIN)) {
     console.log(`Using local stackql binary: ${STACKQL_BIN}`);
     return STACKQL_BIN;
   }
 
-  // Download
-  console.log(`Downloading stackql binary from ${DOWNLOAD_URL}...`);
-  mkdirSync(STACKQL_DIR, { recursive: true });
+  // Download to cwd (binary sits alongside .stackql/ provider cache dir)
+  const cwd = process.cwd();
+  console.log(`Downloading latest stackql binary from ${DOWNLOAD_URL}...`);
 
-  const zipPath = path.join(STACKQL_DIR, 'stackql.zip');
+  const zipPath = path.join(cwd, 'stackql.zip');
 
   const res = await fetch(DOWNLOAD_URL);
   if (!res.ok || !res.body) {
     throw new Error(`Failed to download stackql: HTTP ${res.status}`);
   }
 
-  // Save the zip file
   const fileStream = createWriteStream(zipPath);
   await pipeline(res.body as unknown as NodeJS.ReadableStream, fileStream);
 
-  // Unzip (use system unzip — available on Linux)
-  execSync(`unzip -o "${zipPath}" -d "${STACKQL_DIR}"`, { stdio: 'pipe' });
+  // Unzip to cwd — produces ./stackql binary
+  execSync(`unzip -o "${zipPath}" -d "${cwd}"`, { stdio: 'pipe' });
   chmodSync(STACKQL_BIN, 0o755);
 
   // Clean up zip
