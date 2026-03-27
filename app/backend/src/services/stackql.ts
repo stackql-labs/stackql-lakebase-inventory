@@ -1,6 +1,11 @@
 /** StackQL service – manages server subprocess and query execution via pgwire-lite. */
 
-import { spawn, type ChildProcess } from 'child_process';
+import { spawn, execSync, type ChildProcess } from 'child_process';
+import { existsSync, chmodSync, mkdirSync } from 'fs';
+import { pipeline } from 'stream/promises';
+import { createWriteStream } from 'fs';
+import { createGunzip } from 'zlib';
+import path from 'path';
 import { runQuery } from '@stackql/pgwire-lite';
 import type { QueryResult } from '../models/types.js';
 
@@ -8,6 +13,9 @@ let serverProcess: ChildProcess | null = null;
 let isReady = false;
 
 const STACKQL_PORT = parseInt(process.env.STACKQL_PORT ?? '5444', 10);
+const STACKQL_DIR = path.resolve(process.cwd(), '.stackql');
+const STACKQL_BIN = path.join(STACKQL_DIR, 'stackql');
+const DOWNLOAD_URL = 'https://releases.stackql.io/stackql/latest/stackql_linux_amd64.zip';
 
 const pgwireOptions = {
   user: 'stackql',
@@ -17,28 +25,68 @@ const pgwireOptions = {
   useTLS: false,
 };
 
+/** Resolve the stackql binary path — download if not present. */
+async function ensureBinary(): Promise<string> {
+  // Check if already in PATH
+  try {
+    const pathBin = execSync('which stackql', { encoding: 'utf-8' }).trim();
+    if (pathBin) {
+      console.log(`Using stackql from PATH: ${pathBin}`);
+      return pathBin;
+    }
+  } catch {
+    // Not in PATH, continue to local check/download
+  }
+
+  // Check local .stackql/ directory
+  if (existsSync(STACKQL_BIN)) {
+    console.log(`Using local stackql binary: ${STACKQL_BIN}`);
+    return STACKQL_BIN;
+  }
+
+  // Download
+  console.log(`Downloading stackql binary from ${DOWNLOAD_URL}...`);
+  mkdirSync(STACKQL_DIR, { recursive: true });
+
+  const zipPath = path.join(STACKQL_DIR, 'stackql.zip');
+
+  const res = await fetch(DOWNLOAD_URL);
+  if (!res.ok || !res.body) {
+    throw new Error(`Failed to download stackql: HTTP ${res.status}`);
+  }
+
+  // Save the zip file
+  const fileStream = createWriteStream(zipPath);
+  await pipeline(res.body as unknown as NodeJS.ReadableStream, fileStream);
+
+  // Unzip (use system unzip — available on Linux)
+  execSync(`unzip -o "${zipPath}" -d "${STACKQL_DIR}"`, { stdio: 'pipe' });
+  chmodSync(STACKQL_BIN, 0o755);
+
+  // Clean up zip
+  try { execSync(`rm "${zipPath}"`, { stdio: 'pipe' }); } catch { /* ignore */ }
+
+  console.log(`Downloaded stackql to ${STACKQL_BIN}`);
+  return STACKQL_BIN;
+}
+
 /** Start the StackQL server as a child process. */
 export async function startServer(): Promise<void> {
   if (serverProcess) return;
 
+  const binaryPath = await ensureBinary();
+
   console.log(`Starting StackQL server on port ${STACKQL_PORT}...`);
 
-  // Wrap spawn in a promise so we can catch ENOENT (binary not found)
+  // Wrap spawn in a promise so we can catch ENOENT
   await new Promise<void>((resolve, reject) => {
-    const proc = spawn('stackql', ['srv', `--pgsrv.port=${STACKQL_PORT}`], {
+    const proc = spawn(binaryPath, ['srv', `--pgsrv.port=${STACKQL_PORT}`], {
       stdio: ['ignore', 'pipe', 'pipe'],
     });
 
-    // Handle spawn errors (e.g. binary not found)
     proc.on('error', (err: NodeJS.ErrnoException) => {
       serverProcess = null;
-      if (err.code === 'ENOENT') {
-        reject(new Error(
-          'stackql binary not found in PATH. Install it or set STACKQL_PORT to point to an existing server.'
-        ));
-      } else {
-        reject(err);
-      }
+      reject(err);
     });
 
     proc.stdout?.on('data', (data: Buffer) => {
@@ -58,14 +106,12 @@ export async function startServer(): Promise<void> {
     serverProcess = proc;
 
     // Give the process a moment to fail or start, then resolve
-    // so we can proceed to the readiness check loop
     setTimeout(resolve, 500);
   });
 
   // Wait for the server to be ready (retry connection)
   const maxRetries = 30;
   for (let i = 0; i < maxRetries; i++) {
-    // If process died during startup, bail out
     if (!serverProcess) {
       throw new Error('StackQL server process exited during startup.');
     }
@@ -93,7 +139,7 @@ export function stopServer(): void {
 /** Execute a StackQL query and return structured results. */
 export async function executeQuery(sql: string): Promise<QueryResult> {
   if (!isReady) {
-    throw new Error('StackQL server is not running. Install the stackql binary or start it manually.');
+    throw new Error('StackQL server is not running.');
   }
 
   const start = performance.now();
