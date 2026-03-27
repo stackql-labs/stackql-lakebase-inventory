@@ -4,8 +4,8 @@ app/.env
 
 # StackQL binary and runtime artifacts
 .stackql/
-stackql
-stackql.zip
+**/stackql
+**/stackql.zip
 stackql-*-shell.sh
 /tmp/stackql/
 
