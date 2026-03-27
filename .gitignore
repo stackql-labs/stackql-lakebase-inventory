@@ -33,3 +33,9 @@ Thumbs.db
 .pytest_cache/
 htmlcov/
 .coverage
+
+# Node.js
+node_modules/
+app/backend/dist/
+app/backend/static/
+app/frontend/dist/

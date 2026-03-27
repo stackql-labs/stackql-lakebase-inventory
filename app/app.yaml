@@ -1,0 +1,15 @@
+command: ["node", "backend/dist/server.js"]
+
+env:
+  - name: LAKEBASE_HOST
+    valueFrom: "{{secrets/stackql-inventory/lakebase-host}}"
+  - name: LAKEBASE_PORT
+    valueFrom: "{{secrets/stackql-inventory/lakebase-port}}"
+  - name: LAKEBASE_DATABASE
+    valueFrom: "{{secrets/stackql-inventory/lakebase-database}}"
+  - name: LAKEBASE_USER
+    valueFrom: "{{secrets/stackql-inventory/lakebase-user}}"
+  - name: LAKEBASE_PASSWORD
+    valueFrom: "{{secrets/stackql-inventory/lakebase-password}}"
+  - name: ANTHROPIC_API_KEY
+    valueFrom: "{{secrets/stackql-inventory/anthropic-api-key}}"
